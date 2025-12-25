@@ -69,11 +69,11 @@
           `;
           boxDiv.innerHTML = '<div>🎉</div><div>抽完了！再抽一個？</div>';
         } else {
-          resultDiv.innerHTML = '<p style="color:red;">資料庫沒有「items」資料！請在 Firebase 建立 items 節點並加入物品。</p>';
+          resultDiv.innerHTML = '<p style="color:red;">資料庫沒有「items」資料！</p>';
         }
       } catch (error) {
         console.error(error);
-        resultDiv.innerHTML = `<p style="color:red;">錯誤：${error.message}<br>請開 F12 看 Console 詳細訊息</p>`;
+        resultDiv.innerHTML = `<p style="color:red;">錯誤：${error.message}</p>`;
       }
     }
   </script>
