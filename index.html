@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>抽盲盒機器</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background: #f0f8ff; padding: 50px; }
+    h1 { color: #ff69b4; }
+    #box { width: 300px; height: 300px; margin: 20px auto; background: #fff; border: 5px dashed #ff69b4; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-direction: column; }
+    button { padding: 15px 30px; font-size: 20px; background: #ff69b4; color: white; border: none; border-radius: 10px; cursor: pointer; margin-top: 20px; }
+    button:hover { background: #ff1493; }
+    #result { margin-top: 30px; font-size: 28px; color: #ff69b4; }
+    img { max-width: 280px; max-height: 280px; border-radius: 15px; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .loading { animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <h1>盲盒抽獎機器</h1>
+  <div id="box">
+    <div>🎁</div>
+    <div>點擊下面按鈕抽盲盒！</div>
+  </div>
+  <button onclick="drawBox()">抽一個盲盒！</button>
+  <div id="result"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDh4IB8fakLIj_PAOM76uSRQtneMeRDY7o",
+      authDomain: "project1225-e9577.firebaseapp.com",
+      databaseURL: "https://project1225-e9577-default-rtdb.firebaseio.com/",
+      projectId: "project1225-e9577",
+      storageBucket: "project1225-e9577.firebasestorage.app",
+      messagingSenderId: "846279084104",
+      appId: "1:846279084104:web:47f58714c0354fca59307d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    async function drawBox() {
+      const resultDiv = document.getElementById('result');
+      const boxDiv = document.getElementById('box');
+      
+      resultDiv.innerHTML = '<p>抽獎中... <span class="loading">🎲</span></p>';
+      boxDiv.innerHTML = '<div class="loading" style="font-size:60px;">🎁</div>';
+
+      try {
+        const snapshot = await get(ref(db, 'items'));
+        if (snapshot.exists()) {
+          const items = snapshot.val();
+          const keys = Object.keys(items);
+          if (keys.length === 0) {
+            resultDiv.innerHTML = '<p>資料庫裡沒有物品！請先加入物品。</p>';
+            return;
+          }
+          const randomKey = keys[Math.floor(Math.random() * keys.length)];
+          const item = items[randomKey];
+
+          resultDiv.innerHTML = `
+            <h2>恭喜抽到！</h2>
+            <p><strong>${item.name || '未知物品'}</strong></p>
+            <p>稀有度：${item.rarity || '未知'}</p>
+            <img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/300?text=圖片載入失敗';">
+          `;
+          boxDiv.innerHTML = '<div>🎉</div><div>抽完了！再抽一個？</div>';
+        } else {
+          resultDiv.innerHTML = '<p style="color:red;">資料庫沒有「items」資料！請在 Firebase 建立 items 節點並加入物品。</p>';
+        }
+      } catch (error) {
+        console.error(error);
+        resultDiv.innerHTML = `<p style="color:red;">錯誤：${error.message}<br>請開 F12 看 Console 詳細訊息</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
