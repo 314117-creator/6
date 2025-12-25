@@ -1,81 +1,295 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>抽盲盒機器</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #f0f8ff; padding: 50px; }
-    h1 { color: #ff69b4; }
-    #box { width: 300px; height: 300px; margin: 20px auto; background: #fff; border: 5px dashed #ff69b4; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-direction: column; }
-    button { padding: 15px 30px; font-size: 20px; background: #ff69b4; color: white; border: none; border-radius: 10px; cursor: pointer; margin-top: 20px; }
-    button:hover { background: #ff1493; }
-    #result { margin-top: 30px; font-size: 28px; color: #ff69b4; }
-    img { max-width: 280px; max-height: 280px; border-radius: 15px; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    .loading { animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>幸運夾娃娃機</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        h1 { color: #ff6b6b; margin-bottom: 20px; }
+
+        /* 娃娃機外殼 */
+        .machine-container {
+            position: relative;
+            width: 350px;
+            height: 500px;
+            background: #fff;
+            border: 10px solid #ff8787;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        /* 玻璃窗效果 */
+        .glass-window {
+            width: 100%;
+            height: 70%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
+            border-bottom: 5px solid #ff8787;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 爪子軌道 */
+        .rail {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            height: 10px;
+            background: #ccc;
+            border-radius: 5px;
+        }
+
+        /* 爪子組件 */
+        #claw {
+            position: absolute;
+            top: 15px; /* 軌道下方 */
+            left: 50%; /* 初始位置 */
+            width: 60px;
+            height: 100px; /* 繩子長度 */
+            transform: translateX(-50%);
+            transition: left 0.3s ease; /* 左右移動動畫 */
+            z-index: 10;
+        }
+
+        /* 繩子 */
+        .rope {
+            width: 4px;
+            height: 100%;
+            background: #333;
+            margin: 0 auto;
+            transition: height 1s ease-in-out;
+        }
+
+        /* 爪子本體 */
+        .claw-hand {
+            width: 60px;
+            height: 40px;
+            background: url('https://cdn-icons-png.flaticon.com/512/900/900659.png') no-repeat center center;
+            background-size: contain;
+            position: absolute;
+            bottom: -40px;
+            left: 0;
+            transition: transform 0.2s;
+        }
+
+        /* 獎品區域 */
+        .prize-area {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100px;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            padding-bottom: 10px;
+        }
+
+        .prize {
+            width: 50px;
+            height: 50px;
+            background-color: #ffd43b;
+            border-radius: 50%;
+            border: 2px solid #fab005;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .prize.caught {
+            opacity: 0; /* 被抓走時隱藏 */
+            transition: opacity 0.5s;
+        }
+
+        /* 控制面板 */
+        .controls {
+            height: 30%;
+            background: #ffc9c9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+        }
+        
+        button:active { transform: scale(0.95); }
+
+        .btn-move { background: #4dabf7; color: white; }
+        .btn-grab { background: #ff6b6b; color: white; font-weight: bold; font-size: 24px; width: 100px; height: 100px; border-radius: 50%; }
+
+        #result-display {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            min-height: 1.5em;
+        }
+
+        /* 抓取動畫狀態 */
+        .dropping .rope { height: 250px !important; }
+        .grabbing .claw-hand { transform: scale(0.9); }
+    </style>
 </head>
 <body>
-  <h1>盲盒抽獎機器</h1>
-  <div id="box">
-    <div>🎁</div>
-    <div>點擊下面按鈕抽盲盒！</div>
-  </div>
-  <button onclick="drawBox()">抽一個盲盒！</button>
-  <div id="result"></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+    
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDh4IB8fakLIj_PAOM76uSRQtneMeRDY7o",
-      authDomain: "project1225-e9577.firebaseapp.com",
-      databaseURL: "https://project1225-e9577-default-rtdb.firebaseio.com/",
-      projectId: "project1225-e9577",
-      storageBucket: "project1225-e9577.firebasestorage.app",
-      messagingSenderId: "846279084104",
-      appId: "1:846279084104:web:47f58714c0354fca59307d"
-    };
+    <h1>幸運夾娃娃機</h1>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    <div class="machine-container">
+        <div class="glass-window">
+            <div class="rail"></div>
+            <div id="claw">
+                <div class="rope"></div>
+                <div class="claw-hand"></div>
+            </div>
 
-    async function drawBox() {
-      const resultDiv = document.getElementById('result');
-      const boxDiv = document.getElementById('box');
-      
-      resultDiv.innerHTML = '<p>抽獎中... <span class="loading">🎲</span></p>';
-      boxDiv.innerHTML = '<div class="loading" style="font-size:60px;">🎁</div>';
+            <div class="prize-area">
+                <div class="prize">🎁</div>
+                <div class="prize">🧸</div>
+                <div class="prize">💎</div>
+                <div class="prize">💰</div>
+            </div>
+        </div>
 
-      try {
-        const snapshot = await get(ref(db, 'items'));
-        if (snapshot.exists()) {
-          const items = snapshot.val();
-          const keys = Object.keys(items);
-          if (keys.length === 0) {
-            resultDiv.innerHTML = '<p>資料庫裡沒有物品！請先加入物品。</p>';
-            return;
-          }
-          const randomKey = keys[Math.floor(Math.random() * keys.length)];
-          const item = items[randomKey];
+        <div class="controls">
+            <div class="btn-group">
+                <button class="btn-move" onclick="moveClaw(-20)">⬅ 左</button>
+                <button class="btn-move" onclick="moveClaw(20)">右 ➡</button>
+            </div>
+            <button class="btn-grab" onclick="startGrab()">抓取!</button>
+        </div>
+    </div>
 
-          resultDiv.innerHTML = `
-            <h2>恭喜抽到！</h2>
-            <p><strong>${item.name || '未知物品'}</strong></p>
-            <p>稀有度：${item.rarity || '未知'}</p>
-            <img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/300?text=圖片載入失敗';">
-          `;
-          boxDiv.innerHTML = '<div>🎉</div><div>抽完了！再抽一個？</div>';
-        } else {
-          resultDiv.innerHTML = '<p style="color:red;">資料庫沒有「items」資料！</p>';
+    <div id="result-display">準備開始...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+        // 1. Firebase 設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyDW3T8fbIPep1YBI5mnbQwycjdarPa5k08",
+            authDomain: "project123-251ab.firebaseapp.com",
+            projectId: "project123-251ab",
+            storageBucket: "project123-251ab.firebasestorage.app",
+            messagingSenderId: "770882910656",
+            appId: "1:770882910656:web:287d341b4268d75a443025"
+        };
+
+        // 初始化 Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 暴露功能給全域 window 使用 (因為 type="module" 預設是封閉的)
+        window.saveResultToFirebase = async (prizeName) => {
+            try {
+                // 這裡假設你有一個 collection 叫做 'winners'
+                // 如果沒有，Firestore 會自動建立
+                await addDoc(collection(db, "winners"), {
+                    prize: prizeName,
+                    timestamp: serverTimestamp(),
+                    user: "User_" + Math.floor(Math.random() * 1000) // 模擬使用者ID
+                });
+                console.log("結果已上傳 Firebase:", prizeName);
+            } catch (e) {
+                console.error("Firebase 上傳失敗: ", e);
+            }
+        };
+    </script>
+
+    <script>
+        let clawPosition = 50; // 0% 到 100%
+        let isMoving = false;
+        const clawElement = document.getElementById('claw');
+        const resultDisplay = document.getElementById('result-display');
+
+        // 1. 移動爪子
+        function moveClaw(amount) {
+            if (isMoving) return;
+            clawPosition += amount;
+            
+            // 限制範圍在 10% 到 90% 之間
+            if (clawPosition < 10) clawPosition = 10;
+            if (clawPosition > 90) clawPosition = 90;
+
+            clawElement.style.left = clawPosition + '%';
         }
-      } catch (error) {
-        console.error(error);
-        resultDiv.innerHTML = `<p style="color:red;">錯誤：${error.message}</p>`;
-      }
-    }
-  </script>
+
+        // 2. 開始抓取流程
+        function startGrab() {
+            if (isMoving) return;
+            isMoving = true;
+            resultDisplay.innerText = "下爪中...";
+
+            // 步驟 A: 下爪 (CSS Class 控制繩子長度)
+            clawElement.classList.add('dropping');
+
+            // 模擬爪子下去的時間
+            setTimeout(() => {
+                // 步驟 B: 收爪 (判斷是否抓到)
+                clawElement.classList.add('grabbing');
+                
+                // 這裡模擬一個簡單的機率 (實際專案可以從 Firebase 讀取獎品池)
+                const prizes = ['安慰獎', '神秘禮物', '大獎', '銘謝惠顧'];
+                // 簡單邏輯：根據位置決定抓到什麼，或者純隨機
+                const finalPrize = prizes[Math.floor(Math.random() * prizes.length)];
+                
+                setTimeout(() => {
+                    // 步驟 C: 爪子上升
+                    clawElement.classList.remove('dropping');
+                    
+                    setTimeout(() => {
+                        // 步驟 D: 歸位並顯示結果
+                        clawElement.classList.remove('grabbing');
+                        isMoving = false;
+                        
+                        if(finalPrize !== '銘謝惠顧') {
+                            resultDisplay.innerText = `恭喜！你抓到了：${finalPrize}`;
+                            resultDisplay.style.color = "green";
+                            
+                            // 呼叫 Firebase 儲存函式 (定義在 module script 中)
+                            if (window.saveResultToFirebase) {
+                                window.saveResultToFirebase(finalPrize);
+                            }
+                        } else {
+                            resultDisplay.innerText = "太可惜了，差一點點！";
+                            resultDisplay.style.color = "gray";
+                        }
+                        
+                    }, 1000); // 上升時間
+                }, 500); // 抓取動作時間
+            }, 1000); // 下降時間
+        }
+    </script>
 </body>
 </html>
